@@ -1,108 +1,4 @@
-﻿/*
-Gosub, Example1 ;Simple ToolTip
-
-Gosub, Example2 ;Links in ToolTip
-
-Gosub, Example3 ;ToolTips for Controls
-
-Gosub, Example4 ;ToolTip follows mouse
-
-Gosub, Example5 ;View Icons included in dll
-
-~Esc::ExitApp
-
-;-------------------------------------------------
-
-Example1:
-TT:=TT("Icon=1","text","Title") ;create a ToolTip
-Loop 50 {
-   TT.Show() ;show ToolTip at mouse coordinates
-   Sleep, 50
-}
-TT.Remove() ;delete ToolTip
-MsgBox ToolTip Deleted, click ok for next ToolTip example
-Return
-;-------------------------------------------------
-
-Example2:
-TT:=TT("CloseButton OnClick=TT_Msg OnClose=TT_MsgClose"
-      ,"<a click>Click Me</a>`n<a Second action>Click Me Too</a>"
-      ,"Title (Click close Button to proceed)")
-TT.Show()
-Exit
-TT_Msg(TT,option){
-   MsgBox % option
-}
-TT_MsgClose(TT){
-   SetTimer, Example3,-100
-}
-
-;-------------------------------------------------
-
-Example3:
-TT:=TT("GUI=1")
-Gui,Add,Edit,,I'm an Edit Box
-TT.Add("Edit1","Edit Control","Center RTL HWND")
-Gui,Add,Button,,I'm a Button
-TT.Add("Button1","<a>You can't click me :)</a>","PARSELINKS")
-Gui,Show
-Return
-GuiClose:
-Gui,Destroy
-TT_Remove() ;remove all tooltips
-;-------------------------------------------------
-
-Example4:
-TT:=TT("ClickTrough Balloon"
-      ,""
-      ,"ClickTrough activated (Hold Ctrl and clict trough ToolTip)") ;create new tooltip
-TT.Color("White","Black")
-Loop 100 {
-   If !GetKeyState("Ctrl","P")
-      TT.Show(A_Hour ":" A_Min ":" A_Sec)
-   Sleep 50
-}
-TT.Remove()
-;-------------------------------------------------
-
-Example5:
-i:=0
-File:="c:\Windows\system32\shell32.dll"
-TT:=TT("OnClick=TTmsg OnClose=TTMsgClose CloseButton")
-TT.Show("<a>Click Me</a>`nhello there I'm a ToolTip`n`nPress Ctrl & + or Ctrl & - to see icons of:`n<a>" File "</a>`n<a newFile>>>> Select another file</a>" ;Text
-         ,"","" ;x and y coordinates
-         ,"ToolTip Title") ;Title
-Return
-^+::
-^-::
-If A_ThisHotkey=^+
-   i++
-else
-   i--
-TT.Title("Icon Number: " i)
-TT.Icon(File,i) ;iconFile and icon index
-Return
-TTMsg(TT,key){
-   global File,i
-   If key=
-      ExitApp
-   else if key=newFile
-  {
-      i:=1
-      FileSelectFile,File,,%A_WinDir%\system32\,Select a file,*.dll;*.exe;*.*
-      TT.Show("<a>Click Me</a>`nhello there I'm a ToolTip`n`nPress Ctrl & + or Ctrl & - to see icons of:`n<a>" File "</a>`n<a newFile>>>> Select another file</a>",,,"Icon Number: " i,file,i)
-  }
-   else if key=Click Me
-      MsgBox % key
-   else
-      Run % "explorer.exe /e,/n,/select," key
-}
-TTMsgClose(TT){
-   ExitApp
-}
-Return
-*/
-;: Title: TT.ahk Object based ToolTip Library by HotKeyIt
+﻿;: Title: TT.ahk Object based ToolTip Library by HotKeyIt
 ;
 
 ; Function: TT() - Object based ToolTip Library by HotKeyIt
@@ -178,25 +74,26 @@ TT(options:="",text:="",title:=""){
   Parent:="",Gui:="",ClickTrough:="",Style:="",NOFADE:="",NoAnimate:="",NOPREFIX:="",AlwaysTip:="",ParseLinks:="",CloseButton:="",Balloon:="",maxwidth:=""
   ,INITIAL:="",AUTOPOP:="",RESHOW:="",OnClick:="",OnClose:="",OnShow:="",ClickHide:="",HWND:="",Center:="",RTL:="",SUB:="",Track:="",Absolute:=""
   ,TRANSPARENT:="",Color:="",Background:="",icon:=0
-  if (options+0!="")
+  if (Type(options+0)="Integer")
     Parent:=options
   else If (options){
-    Loop,Parse,options,%A_Space%,%A_Space%
-      If (istext){
-        If (SubStr(A_LoopField,0)="'")
+    LoopParse,%options%,%A_Space%,%A_Space%
+      If istext {
+        If (SubStr(A_LoopField,-1)="'")
           %istext%:=string A_Space SubStr(A_LoopField,1,StrLen(A_LoopField)-1),istext:="",string:=""
         else
           string.= A_Space A_LoopField
       } else If (A_LoopField ~= "i)AUTOPOP|INITIAL|PARENT|RESHOW|MAXWIDTH|ICON|Color|BackGround|OnClose|OnClick|OnShow|GUI|NOPREFIX|TRACK")
       {
         RegExMatch(A_LoopField,"^(\w+)=?(.*)?$",option)
-        If ((Asc(option2)=39 && SubStr(A_LoopField,0)!="'") && (istext:=option1) && (string:=SubStr(option2,2)))
+        If ((Ord(option.2)=39 && SubStr(A_LoopField,-1)!="'") && (istext:=option.1) && (string:=SubStr(option.2,2)))
           Continue
-        %option1%:=option2
+        option1:=option.1
+        %option1%:=option.2
       } else if ( option2:=InStr(A_LoopField,"=")){
         option1:=SubStr(A_LoopField,1,option2-1)
         %option1%:=SubStr(A_LoopField,option2+1)
-      } else if (A_LoopField)
+      } else if A_LoopField
         %A_LoopField% := 1
   }
 	If (Parent && Parent<100 && !DllCall("IsWindow","PTR",Parent)){
@@ -214,13 +111,13 @@ TT(options:="",text:="",title:=""){
          , "int",0x80000000,"int",0x80000000,"int",0x80000000,"int",0x80000000, "PTR",Parent?Parent:0,"PTR",0,"PTR",0,"PTR",0,"PTR")
   ,DllCall("SetWindowPos","PTR",T.HWND,"PTR",HWND_TOPMOST,"Int",0,"Int",0,"Int",0,"Int",0
                            ,"UInt",SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)
-  ,_.Insert(T)
+  ,_.Push(T)
   ,T.SETMAXTIPWIDTH(MAXWIDTH?MAXWIDTH:A_ScreenWidth)
   If !(AUTOPOP INITIAL RESHOW)
     T.SETDELAYTIME()
   else T.SETDELAYTIME(2,AUTOPOP?AUTOPOP:-1),T.SETDELAYTIME(3,INITIAL?INITIAL:-1),T.SETDELAYTIME(1,RESHOW?RESHOW:-1)
   T.fulltext:=text,T.maintext:=RegExReplace(text,"<a\K[^<]*?>",">")
-  If (OnClick)
+  If OnClick
     ParseLinks:=1
   T.rc:=Struct(_RECT) ;for TTM_SetMargin
   ;Tool for Main ToolTip
@@ -232,24 +129,24 @@ TT(options:="",text:="",title:=""){
 	,T.AddTool(P[])
   If (Theme)
     T.SETWINDOWTHEME()
-  If (Color)
+  If Color
     T.SETTIPTEXTCOLOR(Color)
-  If (Background)
+  If Background
     T.SETTIPBKCOLOR(BackGround)
   T.SetTitle(T.maintitle:=title,icon)
-  If ((T.OnClick:=OnClick)||(T.OnClose:=OnClose)||(T.OnShow:=OnShow))
-    T.OnClose:=OnClose,T.OnShow:=OnShow,T.ClickHide:=ClickHide,OnMessage(0x4e,A_ScriptHwnd,"TT_OnMessage")
+  If ((T.OnClick:=OnClick)||(T.OnClose:=OnClose)||(T.OnShow:=OnShow)),T.OnClose:=OnClose,T.OnShow:=OnShow,T.ClickHide:=ClickHide
+    OnMessage(0x4e,A_ScriptHwnd,"TT_OnMessage")
   Return T
 }
 
 TT_Delete(this){ ;delete all ToolTips (will be executed OnExit)
-	Loop % this.MaxIndex()
+	Loop % this.Length()
 	{	  
 	  this[i:=A_Index].DelTool(this[i].P[])
 	  ,DllCall("DestroyWindow","PTR",this[i].HWND)
 	  for id,tool in this[i].T
 		this[i].DelTool(tool[])
-	  this.Remove(i)
+	  this.Delete(i)
 	}
 	TT_GetIcon() ;delete ToolTips and Destroy all icon handles
 }
@@ -259,7 +156,7 @@ TT_Remove(T:=""){
 	for id,Tool in _
 	{
 	  If (T=Tool){
-			_[id]:=_[_.MaxIndex()],_.Remove(id)
+			_[id]:=_[_.Length()],_.Delete(id)
 			for id,tools in Tool.T
 			  Tool.DelTool(tools[])
 			Tool.DelTool(Tool.P[])
@@ -286,19 +183,19 @@ TT_OnMessage(wParam,lParam,msg,hwnd){
   text:=T.fulltext
   If (m=1){ 							;Show
     If IsFunc(T.OnShow)
-      T.OnShow(T,"")
+      T.OnShow("")
   } else If (m=2){ 					;Close
     If IsFunc(T.OnClose)
-      T.OnClose(T,"")
+      T.OnClose("")
     T.TRACKACTIVATE(0,T.P[])
   } else If InStr(text,"<a"){	;Click
-    If (T.ClickHide)
+    If T.ClickHide
       T.TRACKACTIVATE(0,T.P[])
     If (SubStr(LTrim(text:=SubStr(text,InStr(text,"<a",0,1,HDR.link+1)+2)),1,1)=">")
       action:=SubStr(text,InStr(text,">")+1,InStr(text,"</a>")-InStr(text,">")-1)
     else action:=Trim(action:=SubStr(text,1,InStr(text,">")-1))
-    If IsFunc(func:=T.OnClick)
-      T.OnClick(T,action)
+    If IsFunc(T.OnClick)
+      T.OnClick(action)
   }
   Return true
 }
@@ -323,13 +220,13 @@ TT_ADD(T,Control,Text:="",uFlags:="",Parent:=""){
   }
   If (text="")
     ControlGetText,text,%Control%,% "ahk_id " (Parent?Parent:T.P.hwnd)
-  If (Control+0="")
+  If (Type(Control+0)!="Integer")
     ControlGet,Control,Hwnd,,%Control%,% "ahk_id " (Parent?Parent:T.P.hwnd)
-  If (uFlags)
-    If (uFlags+0="")
+  If uFlags
+    If (Type(uFlags+0)!="Integer")
     {
-      Loop,Parse,uflags,%A_Space%,%A_Space%
-        If (A_LoopField)
+      LoopParse,%uflags%,%A_Space%,%A_Space%
+        If A_LoopField
           %A_LoopField% := 1
       uFlags:=(HWND?0x1:HWND=""?0x1:0)|(Center?0x2:0)|(RTL?0x4:0)|(SUB?0x10:0)|(Track?0x20:0)|(Absolute?0x80:0)|(TRANSPARENT?0x100:0)|(ParseLinks?0x1000:0)
     }
@@ -344,11 +241,11 @@ TT_ADD(T,Control,Text:="",uFlags:="",Parent:=""){
 }
 
 TT_DEL(T,Control){
-  If (!Control)
+  If !Control
     Return 0
-  If (Control+0="")
+  If (Type(Control+0)!="Integer")
     ControlGet,Control,Hwnd,,%Control%,% "ahk_id " t.P.hwnd
-   T.DELTOOL(T.T[Abs(Control)][]),T.T.Remove(Abs(Control))
+   T.DELTOOL(T.T[Abs(Control)][]),T.T.Delete(Abs(Control))
 }
 
 TT_Color(T,Color:="",Background:=""){
@@ -370,7 +267,7 @@ TT_Text(T,text){
 TT_Icon(T,icon:=0,icon_:=1,default:=1){
    static TTM_SETTITLE := 0x400 + (A_IsUnicode ? 33 : 32)
   If icon
-    If (icon+0="")
+    If (Type(icon+0)!="Integer")
       If !icon:=TT_GetIcon(icon,icon_)
 				icon:=default
    Return DllCall("SendMessage","PTR",T.HWND,"UInt",TTM_SETTITLE,"PTR",icon+0,"PTR",T.GetAddress("maintitle"),"PTR"),T.UPDATE()
@@ -393,13 +290,13 @@ TT_GetIcon(File:="",Icon_:=1){
     ; DllCall("gdiplus\GdiplusShutdown", "PTR",pToken) ; not done anymore since it is loaded before script starts
     Return
   }
-	If (CR:=InStr(File,"`r") || LF:=InStr(File,"`n"))
+	If CR:=InStr(File,"`r") || LF:=InStr(File,"`n")
 		File:=SubStr(file,1,CR<LF?CR-1:LF-1) ; this is a local parameter so we can change the memory 
-  If (hIcon[File,Icon_])
+  If IsObject(hIcon[File])&&hIcon[File,Icon_]
     Return hIcon[file,Icon_] 
   else if (hIcon[File] && !IsObject(hIcon[File]))
     return hIcon[File]
-  SplitPath,File,,,Ext
+  SplitPath(File,"","",Ext)
   if (hIcon[Ext] && !IsObject(hIcon[Ext]))
     return hIcon[Ext]
   else If (ext = "cur")
@@ -409,7 +306,7 @@ TT_GetIcon(File:="",Icon_:=1){
        FileGetShortcut,%File%,Fileto,,,,FileIcon,FileIcon_
        File:=!FileIcon ? FileTo : FileIcon
     }
-    SplitPath,File,,,Ext
+    SplitPath(File,"","",Ext)
     DllCall("PrivateExtractIcons", "Str", File, "Int", Icon_-1, "Int", SmallIconSize, "Int", SmallIconSize, "PTR*", Icon, "PTR*", 0, "UInt", 1, "UInt", 0, "Int")
     Return hIcon[File,Icon_]:=Icon
   } else if (Icon_=""){
@@ -460,10 +357,11 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
     T.SETTITLE(title,icon,icon_,defaulticon)
   If (x="TrayIcon" || y="TrayIcon"){
     DetectHiddenWindows,% (DetectHiddenWindows:=A_DetectHiddenWindows ? "On" : "On")
+		; WinGetPid,PID,ahk_id %A_ScriptHwnd%
 		PID:=DllCall("GetCurrentProcessId")
     hWndTray:=WinExist("ahk_class Shell_TrayWnd")
     ControlGet,hWndToolBar,Hwnd,,ToolbarWindow321,ahk_id %hWndTray%
-    WinGet, procpid, Pid, ahk_id %hWndToolBar%
+    WinGetPid, procpid, ahk_id %hWndToolBar%
     DataH   := DllCall( "OpenProcess", "uint", 0x38, "int", 0, "uint", procpid,"PTR") ;0x38 = PROCESS_VM_OPERATION+READ+WRITE
     ,bufAdr  := DllCall( "VirtualAllocEx", "PTR", DataH, "PTR", 0, "uint", sizeof(_TBBUTTON), "uint", MEM_COMMIT:=0x1000, "uint", PAGE_READWRITE:=0x4,"PTR")
 	Loop % max:=DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x418,"PTR",0,"PTR",0,"PTR")
@@ -472,7 +370,7 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
       DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x417,"PTR",i,"PTR",bufAdr,"PTR")
       ,DllCall("ReadProcessMemory", "PTR", DataH, "PTR", bufAdr, "PTR", TB[], "ptr", sizeof(TB), "ptr", 0)
       ,DllCall("ReadProcessMemory", "PTR", DataH, "PTR", TB.dwData, "PTR", RC[], "PTR", 8, "PTR", 0)
-	  WinGet,BWPID,PID,% "ahk_id " NumGet(RC[],0,"PTR")
+	  WinGetPID,BWPID,% "ahk_id " NumGet(RC[],0,"PTR")
 	  If (BWPID!=PID)
         continue
       If (TB.fsState>7){
@@ -512,11 +410,11 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
     pCursor.cbSize:=sizeof(pCursor)
     ,DllCall("GetCursorInfo", "ptr", pCursor[])
     ,DllCall("GetIconInfo", "ptr", pCursor.hCursor, "ptr", pIcon[])
-    If (picon.hbmColor)
+    If picon.hbmColor
       DllCall("DeleteObject", "ptr", pIcon.hbmColor)
     DllCall("GetObject", "ptr", pIcon.hbmMask, "uint", sizeof(_BITMAP), "ptr", pBitmap[])
     ,hbmo := DllCall("SelectObject", "ptr", cdc:=DllCall("CreateCompatibleDC", "ptr", sdc:=DllCall("GetDC","ptr",0,"ptr"),"ptr"), "ptr", pIcon.hbmMask)
-    ,w:=pBitmap.bmWidth,h:=pBitmap.bmHeight, h:= h=w*2 ? (h//2,c:=0xffffff,s:=32) : (h,c:=s:=0)
+    ,w:=pBitmap.bmWidth,h:=pBitmap.bmHeight, h:= h=w*2 ? (c:=0xffffff,s:=32,h//2) : (c:=s:=0,h)
     Loop % w {
       xi := A_Index - 1
       Loop % h {
@@ -585,15 +483,15 @@ TT_Font(T, pFont:="") { ;Taken from HE_SetFont, thanks majkinetor. http://www.au
    weight      := InStr(pFont, "bold")      ? 700   : 400 
 
  ;height 
-   RegExMatch(pFont, "O)(?<=[S|s])(\d{1,2})(?=[ ,])?", height) 
+   RegExMatch(pFont, "(?<=[S|s])(\d{1,2})(?=[ ,])?", height) 
    if (!height.count()) 
       height := [10]
-   RegRead,LogPixels,HKEY_LOCAL_MACHINE,SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontDPI, LogPixels
+   RegRead,LogPixels,HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontDPI, LogPixels
    
    height := -DllCall("MulDiv", "int", Height.1, "int", LogPixels, "int", 72) 
 
  ;face 
-   RegExMatch(pFont, "O)(?<=,).+", fontFace)    
+   RegExMatch(pFont, "(?<=,).+", fontFace)    
    if (fontFace.Value()) 
     fontFace := Trim( fontFace.Value())      ;trim 
    else fontFace := "MS Sans Serif" 
@@ -601,7 +499,7 @@ TT_Font(T, pFont:="") { ;Taken from HE_SetFont, thanks majkinetor. http://www.au
     fontFace:=pFont
   
  ;create font 
-  If (T.hFont)
+  If T.hFont
       DllCall("DeleteObject","PTR",T.hfont)
   T.hFont   := DllCall("CreateFont", "int",  height, "int",  0, "int",  0, "int", 0 
                       ,"int",  weight,   "Uint", italic,   "Uint", underline 
@@ -739,11 +637,11 @@ TTM_SETTIPTEXTCOLOR(T,color:=0){
 }
 TTM_SETTITLE(T,title:="",icon:="",Icon_:=1,default:=1){
   static TTM_SETTITLE := 0x400 + (A_IsUnicode ? 33 : 32) 
-	If (icon)
-    If (icon+0="")
+	If icon
+    If (Type(icon+0)!="Integer")
       If !icon:=TT_GetIcon(icon,Icon_)
 				icon:=default
-  T.maintitle := (StrLen(title) < 96) ? title : (Chr(A_IsUnicode ? 8230 : 133) SubStr(title, -96))
+  T.maintitle := (StrLen(title) < 96) ? title : (Chr(A_IsUnicode ? 8230 : 133) SubStr(title, -97))
    Return DllCall("SendMessage","PTR",T.HWND,"UInt",TTM_SETTITLE,"PTR",icon+0,"PTR",T.GetAddress("maintitle"),"PTR"),T.UPDATE()
 }
 TTM_SETTOOLINFO(T,pTOOLINFO:=0){
