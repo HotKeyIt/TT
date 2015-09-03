@@ -140,6 +140,7 @@ Return
 ; Example:
 ;		file:TT_Example.ahk
 ;
+#include <_Struct>
 TT_Init(){ ;initialize structures function
   global _TOOLINFO:="cbSize,uFlags,PTR hwnd,PTR uId,_RECT rect,PTR hinst,LPTSTR lpszText,PTR lParam,void *lpReserved"
   ,_RECT:="left,top,right,bottom"
@@ -238,7 +239,7 @@ TT(options:="",text:="",title:=""){
     T.SETTIPBKCOLOR(BackGround)
   T.SetTitle(T.maintitle:=title,icon)
   If ((T.OnClick:=OnClick)||(T.OnClose:=OnClose)||(T.OnShow:=OnShow))
-    T.OnClose:=OnClose,T.OnShow:=OnShow,T.ClickHide:=ClickHide,OnMessage(0x4e,A_ScriptHwnd,"TT_OnMessage")
+    T.OnClose:=OnClose,T.OnShow:=OnShow,T.ClickHide:=ClickHide,OnMessage(0x4e,"TT_OnMessage")
   Return T
 }
 
