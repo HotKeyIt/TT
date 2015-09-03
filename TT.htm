@@ -1,0 +1,206 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>TT() - Object based ToolTip Library by HotKeyIt()</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link href="commands.css" rel="stylesheet" type="text/css">
+<link href="print.css" rel="stylesheet" type="text/css" media="print">
+</head>
+<body>
+
+<h1>TT() - Object based ToolTip Library by HotKeyIt()</h1>
+<hr size="2">
+<p>TT is based on AHK_L Objects and supports both, ANSI and UNICODE version, so to use it you will require <a href=http://www.autohotkey.com/forum/viewtopic.php?t=43049>Lexikos AutoHotkey_L.exe</a> or other versions based on it that supports objects.<br><br>TT is used to work with ToolTip controls. You can create standalone ToolTips but also ToolTips for Controls of your GUI.</p>
+
+<p class="CommandSyntax">TTObj:=TT(Options,Text,Title)</p>
+<h4>Parameters</h4>
+<table border="1" width="100%" cellspacing="0" cellpadding="3" bordercolor="#C0C0C0">
+<tr>
+<td width="15%">TTObj</td>
+<td width="85%"><p>ToolTip Object to control ToolTip using its functions and ToolTip messages.</p></td>
+</tr>
+<tr>
+<td width="15%"><b>Options</b></td>
+<td width="85%"><p><b>Description</b> (If Options is a digit or hexadecimal number TT will assume this is the parent window)</p></td>
+</tr>
+<tr>
+<td width="15%"><b>Options requiring a value</b></td>
+<td width="85%"><p>All these options need to be followed by = and a value. For example Parent=99</p></td>
+</tr>
+<tr>
+<td width="15%">GUI/PARENT</td>
+<td width="85%"><p>Parent HWND or Gui Id (Parent can be 1-99 as well). When no Parent or GUI ID is given, GUI +LastFound will be used, when you do not want to have a parent use PARENT=0 (OnShow,OnClick,OnClose is only possible if PARENT is an AutoHotkey window)</p></td>
+</tr>
+<tr>
+<td width="15%">AUTOPOP / INITIAL / RESHOW</td>
+<td width="85%"><p>Option for Control ToolTips.<br>AUTOPOP - How long to remain visible.<br>INITIAL - Delay showing.<br>RESHOW - Delay showing between tools.<br>For reference see <a href=http://msdn.microsoft.com/en-us/library/bb760404.aspx>TTM_SETDELAYTIME Message</a>.</p></td>
+</tr>
+<tr>
+<td width="15%">MAXWIDTH</td>
+<td width="85%"><p>Maximum tooltip window width, or -1 to allow any width.<br>For reference see <a href=http://msdn.microsoft.com/en-us/library/bb760408.aspx>TTM_SETMAXTIPWIDTH Message</a>.</p></td>
+</tr>
+<tr>
+<td width="15%">ICON</td>
+<td width="85%"><p>0=none 1=info 2=warning 3=error (> 3 = hIcon). (!!! Use "" to show the image as icon from a jpg, bmp and other image files.<br>For reference see <a href=http://msdn.microsoft.com/en-us/library/bb760414.aspx>TTM_SETTITLE Message</a>.<br>Since the Icon is in the title, it will appear only if there is a title.</p></td>
+</tr>
+<tr>
+<td width="15%">Color</td>
+<td width="85%"><p>RGB color for ToolTip text color.<br>For reference see <a href=http://msdn.microsoft.com/en-us/library/bb760413.aspx>TTM_SETTIPTEXTCOLOR Message</a>.</p></td>
+</tr>
+<tr>
+<td width="15%">BackGround</td>
+<td width="85%"><p>RGB ToolTip background color.<br>For reference see <a href=http://msdn.microsoft.com/en-us/library/bb760411.aspx>TTM_SETTIPBKCOLOR  Message</a>.</p></td>
+</tr>
+<tr>
+<td width="15%">OnClose/OnClick</td>
+<td width="85%"><p>A function to be launched when a ToolTip was closed or a link was clicked. ParseLinks option will be set automatically.<br><br>Links are created using <a &#91;action&#93;>Text</a>.<br>Your OnClick function can accept up to two parameters ToolTip_Message(action&#91;,Tool&#93;).<br>When action is not specified Text will be used.<br>Tool is your ToolTip object that you can access inside your function.<br>OnClose uses same parameters but first passed parameter will be empty.</p></td>
+</tr>
+<tr>
+<td width="15%"><b>Options not requiring a value<b></td>
+<td width="85%"><p><b>HWND CENTER RTL SUB TRACK ABSOLUTE TRANSPARENT PARSELINKS</b> - For reference see <a href=http://msdn.microsoft.com/en-us/library/bb760256.aspx>TOOLINFO Structure</a><br> - <b>CloseButton</b> for your ToolTip<br> - <b>ClickTrough</b> will enable clicking trough ToolTip<br> - <b>Balloon</b> ToolTip<br> - <b>Style</b> uses themed hyperlinks.<br> - <b>NoFade</b> disables fading in.<br> - <b>NoAnimate</b> disables sliding on Win2000.<br> - <b>NoPrefix</b> Prevents the system from stripping ampersand characters from a string or terminating a string at a tab character.<br> - <b>AlwaysTip</b> - Indicates that the tooltip control appears even if the tooltip control's owner window is inactive.</p></td>
+</tr>
+<tr>
+<td width="15%"><b>ToolTip functions</b></td>
+<td width="85%"><p><b>All function beside Add, Del, Show, Color, Remove and Text are ToolTip messages, for reference see <a href=http://msdn.microsoft.com/en-us/library/ff486069.aspx>ToolTip Messages</a>.<br>To call them use for example TTObj.TRACKACTIVATE(x,y)</b></p></td>
+</tr>
+<tr>
+<td width="15%">ToolTip.<b>Add()</b></td>
+<td width="85%"><p>ToolTip.Add(Control&#91;,text,uFlags/options,parent&#93;)<br> - <b>Control</b> can be text like Button1 or hwnd of control.<br> - <b>Text</b> to be displayed.<br> - <b>uFlags/options</b> can be a value or list of strings <b>HWND CENTER RTL SUB TRACK ABSOLUTE TRANSPARENT PARSELINKS</b>.<br> - <b>Parent</b> can be a parent window, default is set in TT function, see above.<br>To enable ToolTip for Static controls like Text and Picture add 0x100 to Controls options.</p></td>
+</tr>
+<tr>
+<td width="15%">ToolTip.<b>Remove()</b></td>
+<td width="85%"><p>Removes a ToolTip object and all control associations. Call TT_Remove() to remove all ToolTips (will be called automatically when scripts exits).</p></td>
+</tr>
+<tr>
+<td width="15%">ToolTip.<b>Del()</b></td>
+<td width="85%"><p>ToolTip.Del(Control)<br>Delete a ToolTip associated with a control only, other ToolTips will remain.</p></td>
+</tr>
+<tr>
+<td width="15%">ToolTip.<b>Show()</b></td>
+<td width="85%"><p>ToolTip.Show(&#91;Text,x,y,title,icon,iconIdx&#93;)<br>Show a ToolTip. x and y can be TrayIcon to show ToolTip at TrayIcon coordinates of your app.</p></td>
+</tr>
+<tr>
+<td width="15%">ToolTip.<b>Hide()</b></td>
+<td width="85%"><p>Hides a ToolTip. Same as ToolTip.TrackPosition(0).<br>Note NoFade only disables fade in, to have no fade out use ToolTip.Text("")!</p></td>
+</tr>
+<tr>
+<td width="15%">ToolTip.<b>Color()</b></td>
+<td width="85%"><p>ToolTip.Color(textcolor,backgroundcolor)<br>Used to set both colors and string colors like White,Black,Yellow,Red,Blue.... You can also use wrapped message straight away: TTObj.SETTIPBKCOLOR(RGBValue) and ToolTip.SETTIPTEXTCOLOR(RGBValue)</p></td>
+</tr>
+<tr>
+<td width="15%">ToolTip.<b>Font()</b></td>
+<td width="85%"><p>ToolTip.Font(Font)<br>Change Font of ToolTip. Example ToolTip.Font("S20 bold italic striceout underline, Arial")</p></td>
+</tr>
+<tr>
+<td width="15%">ToolTip.<b>Text()</b></td>
+<td width="85%"><p>ToolTip.Text(text)<br>Update text for main ToolTip (created when TT() is called).</p></td>
+</tr>
+<tr>
+<td width="15%">ToolTip.<b>Title()</b></td>
+<td width="85%"><p>ToolTip.Title(&#91;title,icon,iconIdx&#93;)<br>Update title and icon for ToolTip. Icon can be 0 - 3 or a hIcon or a file path and iconIdx if it is an exe,dll or cur file.<br>IconIdx must be an empty string ("") if you want to load an icon from jpg, png, bmp, gif or other supported files by gdi as well as from HEX string.<br>Otherwise associated icon for given file type will be loaded.</p></td>
+</tr>
+<tr>
+<td width="15%">ToolTip.<b>Icon()</b></td>
+<td width="85%"><p>ToolTip.Icon(&#91;icon,iconIdx&#93;)<br>Update only icon for ToolTip. Icon can be a file path, see title function. TT_GetIcon can be used to get a hIcon. "" for iconIdx will load the image as icon from jpg, bmp ... file.<br>Since the Icon is in the title, it will appear only if there is a title.</p></td>
+</tr>
+</table>
+<h4>Return Value</h4>
+TT returns a ToolTip object that can be used to perform all action on a ToolTip.
+<h4>Remarks</h4>
+<p>When no Parent is given when calling TT(), Gui +LastFound will be used, when first parameter of TT(0x283475) is digit or xdigit, it will be used as parent.<br>Options TRACK and NOPREFIX are forced by default, to disable use TRACK=0 NOPREFIX=0.</p>
+<h4>Related</h4>
+<p>None.</p>
+<h4>Example</h4>
+<pre class="NoIndent">Gosub, Example1 <span class="CodeCom">;Simple ToolTip</span>
+Gosub, Example2 <span class="CodeCom">;Links in ToolTip</span>
+Gosub, Example3 <span class="CodeCom">;ToolTips for Controls</span>
+Gosub, Example4 <span class="CodeCom">;ToolTip follows mouse</span>
+Gosub, Example5 <span class="CodeCom">;View Icons included in dll</span>
+~Esc::ExitApp
+<span class="CodeCom">;-------------------------------------------------</span>
+
+Example1:
+TT:=TT(&quot;Icon=1&quot;,&quot;text&quot;,&quot;Title&quot;) <span class="CodeCom">;create a ToolTip</span>
+Loop 50 {
+&#32;&#32;&#32;&#32;TT.Show() <span class="CodeCom">;show ToolTip at mouse coordinates</span>
+&#32;&#32;&#32;&#32;Sleep, 50
+}
+TT.Remove() <span class="CodeCom">;delete ToolTip</span>
+MsgBox ToolTip Deleted, click ok for next ToolTip example
+Return
+<span class="CodeCom">;-------------------------------------------------</span>
+
+Example2:
+TT:=TT(&quot;CloseButton OnClick=TT_Msg OnClose=TT_Msg&quot;
+,&quot;&lt;a click&gt;Click Me&lt;/a&gt;`n&lt;a Second action&gt;Click Me Too&lt;/a&gt;&quot;
+,&quot;Title (Click close Button to proceed)&quot;)
+TT.Show()
+Exit
+TT_Msg(option,Tool){
+&#32;&#32;&#32;&#32;if option=
+&#32;&#32;&#32;&#32;SetTimer,Example3,-100
+&#32;&#32;&#32;&#32;else
+&#32;&#32;&#32;&#32;MsgBox % option
+}
+<span class="CodeCom">;-------------------------------------------------</span>
+
+Example3:
+TT.Title(&quot;&quot;) <span class="CodeCom">;remove Title</span>
+Gui,Add,Edit,,I'm an Edit Box
+TT.Add(&quot;Edit1&quot;,&quot;Edit Control&quot;,&quot;Center RTL HWND&quot;)
+Gui,Add,Button,,I'm a Button
+TT.Add(&quot;Button1&quot;,&quot;&lt;a&gt;You can't click me :)&lt;/a&gt;&quot;,&quot;ParseLinks&quot;)
+Gui,Show
+Return
+GuiClose:
+Gui,Destroy
+TT_Remove() <span class="CodeCom">;remove all tooltips</span>
+<span class="CodeCom">;-------------------------------------------------</span>
+
+Example4:
+TT:=TT(&quot;ClickTrough Balloon&quot;
+,&quot;&quot;
+,&quot;ClickTrough activated (Hold Ctrl and clict trough ToolTip)&quot;) <span class="CodeCom">;create new tooltip</span>
+TT.Color(&quot;White&quot;,&quot;Black&quot;)
+Loop 100 {
+&#32;&#32;&#32;&#32;If !GetKeyState(&quot;Ctrl&quot;,&quot;P&quot;)
+&#32;&#32;&#32;&#32;TT.Show(A_Hour &quot;:&quot; A_Min &quot;:&quot; A_Sec)
+&#32;&#32;&#32;&#32;Sleep 50
+}
+TT.Remove()
+<span class="CodeCom">;-------------------------------------------------</span>
+
+Example5:
+File=c:\Windows\system32\shell32.dll
+TT:=TT(&quot;OnClick=TTmsg OnClose=TTMsg CloseButton&quot;)
+TT.Show(&quot;&lt;a&gt;Click Me&lt;/a&gt;`nhello there I'm a ToolTip`n`nPress Ctrl &amp; + or Ctrl &amp; - to see icons of:`n&quot; File <span class="CodeCom">;Text</span>
+,&quot;&quot;,&quot;&quot; <span class="CodeCom">;x and y coordinates</span>
+,&quot;ToolTip Title&quot;) <span class="CodeCom">;Title</span>
+Return
+^+::
+^-::
+If A_ThisHotkey=^+
+i++
+else
+i--
+TT.Show(&quot;You are currently watching icons in`n&lt;a&gt;&quot; File &quot;&lt;/a&gt;`n&lt;a newFile&gt;&gt;&gt;&gt; Select another file&lt;/a&gt;&quot;
+,&quot;&quot;,&quot;&quot;
+,&quot;Icon Number: &quot; i
+,File,i) <span class="CodeCom">;iconFile and icon index</span>
+Return
+TTMsg(key){
+&#32;&#32;&#32;&#32;global File
+&#32;&#32;&#32;&#32;If key=
+&#32;&#32;&#32;&#32;ExitApp
+&#32;&#32;&#32;&#32;else if key=newFile
+&#32;&#32;&#32;&#32;FileSelectFile,File,,%A_WinDir%\system32\,Select a file,*.dll;*.exe;*.*
+&#32;&#32;&#32;&#32;else if key=Click Me
+&#32;&#32;&#32;&#32;MsgBox % key
+&#32;&#32;&#32;&#32;else
+&#32;&#32;&#32;&#32;Run % &quot;explorer.exe /e,/n,/select,&quot; key
+}
+Return</pre>
+
+</body>
+</html>
