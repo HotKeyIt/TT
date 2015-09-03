@@ -13,5 +13,4 @@ Also you will need following function:
 			return new _Struct(Structure,pointer,init)
 		}
 
-Documentation can be found here: 	https://github.com/HotKeyIt/TT/blob/master/TT.ahk
-Or download documentation  here: 	https://github.com/HotKeyIt/TT/blob/master/TT.chm
+Documentation can be downloaded here: 	https://github.com/HotKeyIt/TT/blob/master/TT.chm
