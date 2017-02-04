@@ -140,7 +140,6 @@ Return
 ; Example:
 ;		file:TT_Example.ahk
 ;
-#include <_Struct>
 TT_Init(){ ;initialize structures function
   global _TOOLINFO:="cbSize,uFlags,PTR hwnd,PTR uId,_RECT rect,PTR hinst,LPTSTR lpszText,PTR lParam,void *lpReserved"
   ,_RECT:="left,top,right,bottom"
@@ -239,7 +238,7 @@ TT(options:="",text:="",title:=""){
     T.SETTIPBKCOLOR(BackGround)
   T.SetTitle(T.maintitle:=title,icon)
   If ((T.OnClick:=OnClick)||(T.OnClose:=OnClose)||(T.OnShow:=OnShow))
-    T.OnClose:=OnClose,T.OnShow:=OnShow,T.ClickHide:=ClickHide,OnMessage(0x4e,"TT_OnMessage")
+    T.OnClose:=OnClose,T.OnShow:=OnShow,T.ClickHide:=ClickHide,OnMessage(0x4e,A_ScriptHwnd,"TT_OnMessage")
   Return T
 }
 
@@ -461,13 +460,21 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
     T.SETTITLE(title,icon,icon_,defaulticon)
   If (x="TrayIcon" || y="TrayIcon"){
     DetectHiddenWindows,% (DetectHiddenWindows:=A_DetectHiddenWindows ? "On" : "On")
-		PID:=DllCall("GetCurrentProcessId")
-    hWndTray:=WinExist("ahk_class Shell_TrayWnd")
-    ControlGet,hWndToolBar,Hwnd,,ToolbarWindow321,ahk_id %hWndTray%
-    WinGet, procpid, Pid, ahk_id %hWndToolBar%
+    PID:=DllCall("GetCurrentProcessId")
+    WinGet, controls, ControlList, % "ahk_id " hWndTray:=WinExist("ahk_class Shell_TrayWnd")
+    Loop,Parse,controls,`n,`r
+    {
+      if InStr(A_LoopField,"ToolbarWindow32"){
+        ControlGet, hWndToolBar, hWnd,, %A_LoopField%, ahk_id %hWndTray%
+        WinGetClass, sClass,% "ahk_id " GetParent(hWndToolBar)
+        If (sClass = "SysPager")
+          Break
+      }
+	}
+    WinGet, procpid, PID, ahk_id %hWndToolBar%
     DataH   := DllCall( "OpenProcess", "uint", 0x38, "int", 0, "uint", procpid,"PTR") ;0x38 = PROCESS_VM_OPERATION+READ+WRITE
     ,bufAdr  := DllCall( "VirtualAllocEx", "PTR", DataH, "PTR", 0, "uint", sizeof(_TBBUTTON), "uint", MEM_COMMIT:=0x1000, "uint", PAGE_READWRITE:=0x4,"PTR")
-	Loop % max:=DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x418,"PTR",0,"PTR",0,"PTR")
+    Loop % max:=DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x418,"PTR",0,"PTR",0,"PTR")
     {
       i:=max-A_Index
       DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x417,"PTR",i,"PTR",bufAdr,"PTR")
@@ -480,7 +487,7 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
         ControlGetPos,xc,yc,xw,yw,Button2,ahk_id %hWndTray%
         xc+=xw/2, yc+=yw/4
       } else {
-        ControlGetPos,xc,yc,,,ToolbarWindow321,ahk_id %hWndTray%
+        ControlGetPos,xc,yc,,,,ahk_id %hWndToolBar%
         DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x41d,"PTR",i,"PTR",bufAdr,"PTR")
         ,DllCall( "ReadProcessMemory", "PTR", DataH, "PTR", bufAdr, "PTR", RC[], "PTR", sizeof(RC), "PTR", 0 )
         ,halfsize:=RC.bottom/2
@@ -493,7 +500,7 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
       break
     }
     If (!xc && !yc){
-      If (A_OsVersion~="i)Win_7|WIN_VISTA")
+      If (A_OSVersion>"5" && A_OSVersion<"10")
           ControlGetPos,xc,yc,xw,yw,Button1,ahk_id %hWndTray%
         else
           ControlGetPos,xc,yc,xw,yw,Button2,ahk_id %hWndTray%
@@ -760,6 +767,29 @@ TTM_TRACKACTIVATE(T,activate:=0,pTOOLINFO:=0){
    Return DllCall("SendMessage","PTR",T.HWND,"UInt",0x411,"PTR",activate,"PTR",(pTOOLINFO)?(pTOOLINFO):(T.P[]),"PTR")
 }
 TTM_TRACKPOSITION(T,x:=0,y:=0){
+  WinGet, Style, Style,% "ahk_id " t.hwnd
+  if !(Style & 0x40){ ; Not Balloon
+    dtw:=Struct("int left,top,right,bottom")
+    dtw.right := GetSystemMetrics(78) ;SM_CXVIRTUALSCREEN
+    if (dtw.right) ; A non-zero value indicates the OS supports multiple monitors or at least SM_CXVIRTUALSCREEN.
+    {
+        dtw.left := GetSystemMetrics(76) ;SM_XVIRTUALSCREEN Might be negative or greater than zero.
+        dtw.right += dtw.left
+        dtw.top := GetSystemMetrics(77) ;SM_YVIRTUALSCREEN Might be negative or greater than zero.
+        dtw.bottom := dtw.top + GetSystemMetrics(79) ;SM_CYVIRTUALSCREEN
+    }
+    else ;  Win95/NT do not support SM_CXVIRTUALSCREEN and such, so zero was returned.
+        GetWindowRect(GetDesktopWindow(), dtw[])
+    ttw:=Struct("int left,top,right,bottom")
+    GetWindowRect(t.hwnd, ttw[])
+    tt_width := ttw.right - ttw.left
+    tt_height := ttw.bottom - ttw.top
+
+    if (x + tt_width >= dtw.right)
+      x := dtw.right - tt_width - 1
+    if (y + tt_height >= dtw.bottom)
+      y := dtw.bottom - tt_height - 1
+  }
   Return DllCall("SendMessage","PTR",T.HWND,"UInt",0x412,"PTR",0,"PTR",(x & 0xFFFF)|(y & 0xFFFF)<<16,"PTR")
 }
 TTM_UPDATE(T){
