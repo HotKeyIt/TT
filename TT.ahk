@@ -140,6 +140,7 @@ Return
 ; Example:
 ;		file:TT_Example.ahk
 ;
+#include <_Struct>
 TT_Init(){ ;initialize structures function
   global _TOOLINFO:="cbSize,uFlags,PTR hwnd,PTR uId,_RECT rect,PTR hinst,LPTSTR lpszText,PTR lParam,void *lpReserved"
   ,_RECT:="left,top,right,bottom"
