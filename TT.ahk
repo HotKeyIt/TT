@@ -665,7 +665,7 @@ TTM_TRACKACTIVATE(T,activate:=0,pTOOLINFO:=0){
    Return DllCall("SendMessage","PTR",T.HWND,"UInt",0x411,"PTR",activate,"PTR",(pTOOLINFO)?(pTOOLINFO):(T.P[]),"PTR")
 }
 TTM_TRACKPOSITION(T,x:=0,y:=0){
-  WinGet, Style, Style,% "ahk_id " t.hwnd
+  WinGetStyle, Style,% "ahk_id " t.hwnd
   if !(Style & 0x40){ ; Not Balloon
     dtw:=Struct("int left,top,right,bottom")
     dtw.right := GetSystemMetrics(78) ;SM_CXVIRTUALSCREEN
