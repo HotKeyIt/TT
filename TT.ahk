@@ -771,18 +771,18 @@ TTM_TRACKPOSITION(T,x:=0,y:=0){
   WinGet, Style, Style,% "ahk_id " t.hwnd
   if !(Style & 0x40){ ; Not Balloon
     dtw:=Struct("int left,top,right,bottom")
-    dtw.right := GetSystemMetrics(78) ;SM_CXVIRTUALSCREEN
+    dtw.right := DllCall("GetSystemMetrics","Int",78) ;SM_CXVIRTUALSCREEN
     if (dtw.right) ; A non-zero value indicates the OS supports multiple monitors or at least SM_CXVIRTUALSCREEN.
     {
-        dtw.left := GetSystemMetrics(76) ;SM_XVIRTUALSCREEN Might be negative or greater than zero.
+        dtw.left := DllCall("GetSystemMetrics","Int",76) ;SM_XVIRTUALSCREEN Might be negative or greater than zero.
         dtw.right += dtw.left
-        dtw.top := GetSystemMetrics(77) ;SM_YVIRTUALSCREEN Might be negative or greater than zero.
-        dtw.bottom := dtw.top + GetSystemMetrics(79) ;SM_CYVIRTUALSCREEN
+        dtw.top := DllCall("GetSystemMetrics","Int",77) ;SM_YVIRTUALSCREEN Might be negative or greater than zero.
+        dtw.bottom := dtw.top + DllCall("GetSystemMetrics","Int",79) ;SM_CYVIRTUALSCREEN
     }
     else ;  Win95/NT do not support SM_CXVIRTUALSCREEN and such, so zero was returned.
-        GetWindowRect(GetDesktopWindow(), dtw[])
+        DllCall("GetWindowRect","PTR",DllCall("GetDesktopWindow","PTR"), "PTR", dtw[])
     ttw:=Struct("int left,top,right,bottom")
-    GetWindowRect(t.hwnd, ttw[])
+    DllCall("GetWindowRect","PTR", t.hwnd, "PTR", ttw[])
     tt_width := ttw.right - ttw.left
     tt_height := ttw.bottom - ttw.top
 
