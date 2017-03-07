@@ -467,7 +467,7 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
     {
       if InStr(A_LoopField,"ToolbarWindow32"){
         ControlGet, hWndToolBar, hWnd,, %A_LoopField%, ahk_id %hWndTray%
-        WinGetClass, sClass,% "ahk_id " GetParent(hWndToolBar)
+        WinGetClass, sClass,% "ahk_id " DllCall("GetParent","PTR",hWndToolBar)
         If (sClass = "SysPager")
           Break
       }
