@@ -46,7 +46,7 @@ TT_Init(){ ;initialize structures function
   ,_ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor"
   ,_BITMAP:="LONG bmType,LONG bmWidth,LONG bmHeight,LONG bmWidthBytes,WORD bmPlanes,WORD bmBitsPixel,LPVOID bmBits"
   ,_SHFILEINFO:="HICON hIcon,iIcon,DWORD dwAttributes,TCHAR szDisplayName[260],TCHAR szTypeName[80]"
-  ,_TBBUTTON:="iBitmap,idCommand,BYTE fsState,BYTE fsStyle,BYTE bReserved[" (A_PtrSize=8?6:2) "],DWORD_PTR dwData,INT_PTR iString"
+  ,_TBBUTTON:="iBitmap,idCommand,BYTE fsState,BYTE fsStyle,BYTE bReserved[" (A_Is64bitOS?6:2) "],DWORD_PTR dwData,INT_PTR iString"
   static _:={base:{__Delete:"TT_Delete"}}
   return _
 }
@@ -128,9 +128,9 @@ TT(options:="",text:="",title:=""){
 	,T.AddTool(P[])
   If (Theme)
     T.SETWINDOWTHEME()
-  If Color
+  If Color!=""
     T.SETTIPTEXTCOLOR(Color)
-  If Background
+  If Background!=""
     T.SETTIPBKCOLOR(BackGround)
   T.SetTitle(T.maintitle:=title,icon)
   If ((T.OnClick:=OnClick)||(T.OnClose:=OnClose)||(T.OnShow:=OnShow))
@@ -358,18 +358,23 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
   If (x="TrayIcon" || y="TrayIcon"){
     DetectHiddenWindows (DetectHiddenWindows:=A_DetectHiddenWindows ? "On" : "On")
 		; WinGetPid,PID,ahk_id %A_ScriptHwnd%
-		PID:=DllCall("GetCurrentProcessId")
-    hWndTray:=WinExist("ahk_class Shell_TrayWnd")
-    hWndToolBar:=ControlGetHwnd("ToolbarWindow321","ahk_id " hWndTray)
+    PID:=DllCall("GetCurrentProcessId")
+    hWndTray:=DllCall("FindWindow","Str","Shell_TrayWnd", "PTR", 0)
+    for k,ToolbarWindow in WinGetControls("ahk_id " hWndTray)
+      if InStr(ToolbarWindow,"ToolbarWindow32")
+        && ("SysPager"=WinGetClass("ahk_id " DllCall( "GetParent", "Ptr", hWnd:=ControlGetHwnd(ToolbarWindow, "ahk_id " hWndTray) ))){
+        hWndToolBar:=ControlGetHwnd(ToolbarWindow32:=ToolbarWindow,"ahk_id " hWndTray)
+        Break
+      }
     procpid:=WinGetPid("ahk_id " hWndToolBar)
-    DataH   := DllCall( "OpenProcess", "uint", 0x38, "int", 0, "uint", procpid,"PTR") ;0x38 = PROCESS_VM_OPERATION+READ+WRITE
-    ,bufAdr  := DllCall( "VirtualAllocEx", "PTR", DataH, "PTR", 0, "uint", sizeof(_TBBUTTON), "uint", MEM_COMMIT:=0x1000, "uint", PAGE_READWRITE:=0x4,"PTR")
+    hProc   := DllCall( "OpenProcess", "uint", 0x38, "int", 0, "uint", procpid,"PTR") ;0x38 = PROCESS_VM_OPERATION+READ+WRITE
+    ,bufAdr  := DllCall( "VirtualAllocEx", "PTR", hProc, "PTR", 0, "uint", sizeof(TB), "uint", MEM_COMMIT:=0x1000, "uint", PAGE_READWRITE:=0x4,"PTR")
 	Loop max:=DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x418,"PTR",0,"PTR",0,"PTR")
     {
       i:=max-A_Index
       DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x417,"PTR",i,"PTR",bufAdr,"PTR")
-      ,DllCall("ReadProcessMemory", "PTR", DataH, "PTR", bufAdr, "PTR", TB[], "ptr", sizeof(TB), "ptr", 0)
-      ,DllCall("ReadProcessMemory", "PTR", DataH, "PTR", TB.dwData, "PTR", RC[], "PTR", 8, "PTR", 0)
+      ,DllCall("ReadProcessMemory", "PTR", hProc, "PTR", bufAdr, "PTR", TB[], "ptr", sizeof(TB), "ptr", 0)
+      ,DllCall("ReadProcessMemory", "PTR", hProc, "PTR", TB.dwData, "PTR", RC[], "PTR", 8, "PTR", 0)
 	  BWPID:=WinGetPID("ahk_id " NumGet(RC[],0,"PTR"))
 	  If (BWPID!=PID)
         continue
@@ -377,10 +382,10 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
         ControlGetPos xc,yc,xw,yw,"Button2","ahk_id " hWndTray
         xc+=xw/2, yc+=yw/4
       } else {
-        ControlGetPos xc,yc,,,"ToolbarWindow321","ahk_id " hWndTray
+        ControlGetPos xc,yc,,,ToolbarWindow32,"ahk_id " hWndTray
         DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x41d,"PTR",i,"PTR",bufAdr,"PTR")
-        ,DllCall( "ReadProcessMemory", "PTR", DataH, "PTR", bufAdr, "PTR", RC[], "PTR", sizeof(RC), "PTR", 0 )
-        ,halfsize:=RC.bottom/2
+        ,DllCall( "ReadProcessMemory", "PTR", hProc, "PTR", bufAdr, "PTR", RC[], "PTR", sizeof(RC), "PTR", 0 )
+        ,halfsize:=(RC.bottom-RC.top)/2
         ,xc+=RC.left + halfsize
         ,yc+=RC.top + (halfsize/1.5)
       }
@@ -390,16 +395,16 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
       break
     }
     If (!xc && !yc){
-      If (A_OsVersion~="i)Win_7|WIN_VISTA")
-          ControlGetPos xc,yc,xw,yw,"Button1","ahk_id " hWndTray
-        else
+      If (SubStr(A_OsVersion,1,InStr(A_OsVersion,".")-1)>5)
           ControlGetPos xc,yc,xw,yw,"Button2","ahk_id " hWndTray
+        else
+          ControlGetPos xc,yc,xw,yw,"Button1","ahk_id " hWndTray
       xc+=xw/2, yc+=yw/4
       WinGetPos xw,yw,,,"ahk_id " hWndTray
       xc+=xw,yc+=yw
     }
-    DllCall( "VirtualFreeEx", "PTR", DataH, "PTR", bufAdr, "PTR", 0, "uint", MEM_RELEASE:=0x8000)
-    ,DllCall( "CloseHandle", "PTR", DataH )
+    DllCall( "VirtualFreeEx", "PTR", hProc, "PTR", bufAdr, "PTR", 0, "uint", MEM_RELEASE:=0x8000)
+    ,DllCall( "CloseHandle", "PTR", hProc )
     DetectHiddenWindows DetectHiddenWindows
     If (x="TrayIcon")
       x:=xc
@@ -621,7 +626,7 @@ TTM_SETTIPBKCOLOR(T,color:=0){
       Color:=%color%
   Color := (StrLen(Color) < 8 ? "0x" : "") . Color
   Color := ((Color&255)<<16)+(((Color>>8)&255)<<8)+(Color>>16) ; rgb -> bgr
-   Return DllCall("SendMessage","PTR",T.HWND,"UInt",TTM_SETTIPBKCOLOR,"PTR",color,"PTR",0,"PTR")
+  Return DllCall("SendMessage","PTR",T.HWND,"UInt",TTM_SETTIPBKCOLOR,"PTR",color,"PTR",0,"PTR")
 }
 TTM_SETTIPTEXTCOLOR(T,color:=0){
    static TTM_SETTIPTEXTCOLOR := 0x414
