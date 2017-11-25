@@ -150,7 +150,7 @@ TT_Init(){ ;initialize structures function
   ,_ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor"
   ,_BITMAP:="LONG bmType,LONG bmWidth,LONG bmHeight,LONG bmWidthBytes,WORD bmPlanes,WORD bmBitsPixel,LPVOID bmBits"
   ,_SHFILEINFO:="HICON hIcon,iIcon,DWORD dwAttributes,TCHAR szDisplayName[260],TCHAR szTypeName[80]"
-  ,_TBBUTTON:="iBitmap,idCommand,BYTE fsState,BYTE fsStyle,BYTE bReserved[" (A_PtrSize=8?6:2) "],DWORD_PTR dwData,INT_PTR iString"
+  ,_TBBUTTON:="iBitmap,idCommand,BYTE fsState,BYTE fsStyle,BYTE bReserved[" (A_Is64bitOS=8?6:2) "],DWORD_PTR dwData,INT_PTR iString"
   static _:={base:{__Delete:"TT_Delete"}}
   return _
 }
