@@ -36,7 +36,6 @@
 ; Example:
 ;		file:TT_Example.ahk
 ;
-#include <_Struct>
 TT_Init(){ ;initialize structures function
   global _TOOLINFO:="cbSize,uFlags,PTR hwnd,PTR uId,_RECT rect,PTR hinst,LPTSTR lpszText,PTR lParam,void *lpReserved"
   ,_RECT:="left,top,right,bottom"
@@ -106,12 +105,12 @@ TT(options:="",text:="",title:=""){
   }
   T:=Object("base",base)
   ,T.HWND := DllCall("CreateWindowEx", "UInt", (ClickTrough?0x20:0)|0x8, "str", "tooltips_class32", "PTR", 0
-         , "UInt",0x80000000|(Style?0x100:0)|(NOFADE?0x20:0)|(NoAnimate?0x10:0)|((NOPREFIX+1)?(NOPREFIX?0x2:0x2):0x2)|(AlwaysTip?0x1:0)|(ParseLinks?0x1000:0)|(CloseButton?0x80:0)|(Balloon?0x40:0)
+         , "UInt",0x80000000|(Style?0x100:0)|(NOFADE?0x20:0)|(NoAnimate?0x10:0)|(NOPREFIX=0?0x0:0x2)|(AlwaysTip?0x1:0)|(ParseLinks?0x1000:0)|(CloseButton?0x80:0)|(Balloon?0x40:0)
          , "int",0x80000000,"int",0x80000000,"int",0x80000000,"int",0x80000000, "PTR",Parent?Parent:0,"PTR",0,"PTR",0,"PTR",0,"PTR")
   ,DllCall("SetWindowPos","PTR",T.HWND,"PTR",HWND_TOPMOST,"Int",0,"Int",0,"Int",0,"Int",0
                            ,"UInt",SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)
   ,_.Push(T)
-  ,T.SETMAXTIPWIDTH(MAXWIDTH?MAXWIDTH:A_ScreenWidth)
+  T.SETMAXTIPWIDTH(MAXWIDTH?MAXWIDTH:A_ScreenWidth)
   If !(AUTOPOP INITIAL RESHOW)
     T.SETDELAYTIME()
   else T.SETDELAYTIME(2,AUTOPOP?AUTOPOP:-1),T.SETDELAYTIME(3,INITIAL?INITIAL:-1),T.SETDELAYTIME(1,RESHOW?RESHOW:-1)
@@ -121,7 +120,7 @@ TT(options:="",text:="",title:=""){
   T.rc:=Struct(_RECT) ;for TTM_SetMargin
   ;Tool for Main ToolTip
   ,T.P:=Struct(_TOOLINFO),P:=T.P,P.cbSize:=sizeof(_TOOLINFO)
-	,P.uFlags:=(HWND?0x1:0)|(Center?0x2:0)|(RTL?0x4:0)|(SUB?0x10:0)|(Track+1?(Track?0x20:0):0x20)|(Absolute?0x80:0)|(TRANSPARENT?0x100:0)|(ParseLinks?0x1000:0)
+	,P.uFlags:=(HWND?0x1:0)|(Center?0x2:0)|(RTL?0x4:0)|(SUB?0x10:0)|(Track=0?0:0x20)|(Absolute?0x80:0)|(TRANSPARENT?0x100:0)|(ParseLinks?0x1000:0)
 	,P.hwnd:=Parent
 	,P.uId:=Parent
 	,P.lpszText[""]:=T.GetAddress("maintext")?T.GetAddress("maintext"):0
@@ -220,7 +219,7 @@ TT_ADD(T,Control,Text:="",uFlags:="",Parent:=""){
   }
   If (text="")
     text:=ControlGetText(Control,"ahk_id " (Parent?Parent:T.P.hwnd))
-  If (Type(Control+0)!="Integer")
+  If (Type(Control)!="Integer")
     Control:=ControlGetHwnd(Control,"ahk_id " (Parent?Parent:T.P.hwnd))
   If uFlags
     If (Type(uFlags+0)!="Integer")
@@ -281,12 +280,13 @@ TT_GetIcon(File:="",Icon_:=1){
 	;~ static _SHFILEINFO:="HICON hIcon,iIcon,DWORD dwAttributes,TCHAR szDisplayName[260],TCHAR szTypeName[80]"
 	static sfi:=Struct(_SHFILEINFO),sfi_size:=sizeof(_SHFILEINFO),SmallIconSize:=DllCall("GetSystemMetrics","Int",49)
 	If !File {
-    for file,obj in hIcon
-      If IsObject(obj){
-        for icon,handle in obj
+    If IsObject(hIcon)
+      for file,obj in hIcon
+        If IsObject(obj){
+          for icon,handle in obj
+            DllCall("DestroyIcon","PTR",handle)
+        } else 
           DllCall("DestroyIcon","PTR",handle)
-      } else 
-        DllCall("DestroyIcon","PTR",handle)
     ; DllCall("gdiplus\GdiplusShutdown", "PTR",pToken) ; not done anymore since it is loaded before script starts
     Return
   }
@@ -395,7 +395,7 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
       break
     }
     If (!xc && !yc){
-      If (SubStr(A_OsVersion,1,InStr(A_OsVersion,".")-1)>5)
+      If (SubStr(A_OsVersion,1,InStr(A_OsVersion,".")+1)>6.1)
           ControlGetPos xc,yc,xw,yw,"Button2","ahk_id " hWndTray
         else
           ControlGetPos xc,yc,xw,yw,"Button1","ahk_id " hWndTray
