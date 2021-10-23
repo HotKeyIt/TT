@@ -234,7 +234,7 @@ TT_ADD(T,Control,Text:="",uFlags:="",Parent:=""){
   ,T[Abs(Control),"text"]:=RegExReplace(text,"<a\K[^<]*?>",">")
   ,Tool.uId:=Control,Tool.hwnd:=Parent?Parent:T.P.hwnd,Tool.uFlags:=uFlags?(uFlags|16):(1|16)
   ,Tool.lpszText[""]:=T[Abs(Control)].GetAddress("text")
-  ,DllCall("GetClientRect","PTR",T.HWND,"PTR",Tool.rect[])
+  ,DllCall("GetClientRect","PTR",T.HWND,"PTR",Tool.rect[""])
   T.ADDTOOL(Tool[])
   DetectHiddenWindows DetectHiddenWindows
 }
